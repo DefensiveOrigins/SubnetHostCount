@@ -24,4 +24,4 @@ Python 3.6+
 ### Command
 
 ```bash
-python count_hosts.py path/to/cidrs.txt
+python HostCount.py path/to/cidrs.txt
