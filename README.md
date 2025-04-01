@@ -1,5 +1,5 @@
 # SubnetHostCount
-Simply python to count hosts in a list of subnets and ip addresses
+Simple python to count hosts in a list of subnets and ip addresses
 
 
 # CIDR Host Counter
