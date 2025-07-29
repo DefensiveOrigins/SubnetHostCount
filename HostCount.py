@@ -2,8 +2,8 @@ import ipaddress
 import argparse
 import os
 
-def count_valid_hosts_from_file(file_path):
-    total_hosts = 0
+def extract_unique_hosts_from_file(file_path):
+    unique_hosts = set()
 
     try:
         with open(file_path, 'r') as f:
@@ -18,36 +18,39 @@ def count_valid_hosts_from_file(file_path):
                     network = ipaddress.ip_network(entry, strict=False)
                     if isinstance(network, ipaddress.IPv4Network):
                         if network.prefixlen == 32:
-                            total_hosts += 1
+                            unique_hosts.add(str(network.network_address))
                         else:
-                            num_hosts = max(network.num_addresses - 2, 0)
-                            total_hosts += num_hosts
+                            # Add usable hosts only (skip network and broadcast)
+                            for host in network.hosts():
+                                unique_hosts.add(str(host))
                 except ValueError as e:
                     print(f"WARNING: {file_path} Line {line_number} - Invalid entry '{entry}': {e}")
     except Exception as e:
         print(f"ERROR: Could not read file {file_path}: {e}")
 
-    return total_hosts
+    return unique_hosts
 
 def main():
-    parser = argparse.ArgumentParser(description="Count valid hosts in a list of CIDRs or IPs.")
+    parser = argparse.ArgumentParser(description="Count unique valid hosts from CIDRs or IPs in files.")
     parser.add_argument("file", nargs='?', help="Path to file containing CIDR ranges or IPs, one per line.")
     parser.add_argument("-d", "--directory", help="Directory of files to process.")
     args = parser.parse_args()
 
     if args.directory:
-        grand_total = 0
+        grand_total_hosts = set()
         print(f"\nProcessing directory: {args.directory}")
         for entry in os.listdir(args.directory):
             full_path = os.path.join(args.directory, entry)
             if os.path.isfile(full_path):
-                count = count_valid_hosts_from_file(full_path)
-                print(f"{entry}: {count} hosts")
-                grand_total += count
-        print(f"\nTotal hosts across all files: {grand_total}")
+                file_hosts = extract_unique_hosts_from_file(full_path)
+                print(f"{entry}: {len(file_hosts)} unique hosts")
+                grand_total_hosts.update(file_hosts)
+        print(f"\nTotal unique hosts across all files: {len(grand_total_hosts)}")
+
     elif args.file:
-        total = count_valid_hosts_from_file(args.file)
-        print(f"\nTotal valid hosts in {args.file} (excluding network and broadcast, except for /32 IPs): {total}")
+        unique_hosts = extract_unique_hosts_from_file(args.file)
+        print(f"\nTotal unique hosts in {args.file} (excluding network and broadcast): {len(unique_hosts)}")
+
     else:
         print("ERROR: Either a file or a directory must be specified.")
         parser.print_help()
