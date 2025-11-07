@@ -68,6 +68,18 @@ def main():
                 grand_total_hosts.update(file_hosts)
         print(f"\nTotal unique hosts across all files: {len(grand_total_hosts)}")
 
+        # Build host -> set(files) mapping once for both -D output and the duplicate note
+        host_to_files = defaultdict(set)
+        for fname, hosts in file_hosts_map.items():
+            for h in hosts:
+                host_to_files[h].add(fname)
+        duplicates_map = {host: sorted(list(files)) for host, files in host_to_files.items() if len(files) > 1}
+        duplicate_count = len(duplicates_map)
+
+        # If -D not used, but duplicates exist, print a concise note that duplicates were found and are only counted once
+        if not args.duplicates and duplicate_count > 0:
+            print(f"\nNote: {duplicate_count} host(s) were found in more than one file but are only counted once in the total unique host count. Use -D to list them.")
+
         if args.rfc1918:
             print("\nRFC1918 breakdown per file:")
             for fname in sorted(file_hosts_map.keys()):
@@ -81,21 +93,13 @@ def main():
             print(f"\nTotals across all files: {total_rfc} RFC1918, {total_non_rfc} non-RFC1918")
 
         if args.duplicates:
-            # Build host -> set(files) mapping
-            host_to_files = defaultdict(set)
-            for fname, hosts in file_hosts_map.items():
-                for h in hosts:
-                    host_to_files[h].add(fname)
-
-            # Find hosts present in more than one file
-            duplicates = {host: sorted(list(files)) for host, files in host_to_files.items() if len(files) > 1}
-
-            if not duplicates:
+            # Use the mapping we already built to list duplicates
+            if not duplicates_map:
                 print("\nNo duplicate hosts found between files.")
             else:
-                print(f"\nDuplicate hosts found between files: {len(duplicates)} hosts\n")
-                for host in sorted(duplicates.keys(), key=lambda x: tuple(int(p) for p in x.split('.'))):
-                    files_list = ", ".join(duplicates[host])
+                print(f"\nDuplicate hosts found between files: {len(duplicates_map)} hosts\n")
+                for host in sorted(duplicates_map.keys(), key=lambda x: tuple(int(p) for p in x.split('.'))):
+                    files_list = ", ".join(duplicates_map[host])
                     print(f"{host}: {files_list}")
 
     elif args.file:
