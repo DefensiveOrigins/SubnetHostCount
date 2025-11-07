@@ -3,6 +3,20 @@ import argparse
 import os
 from collections import defaultdict
 
+# RFC1918 networks
+RFC1918_NETWORKS = [
+    ipaddress.ip_network("10.0.0.0/8"),
+    ipaddress.ip_network("172.16.0.0/12"),
+    ipaddress.ip_network("192.168.0.0/16"),
+]
+
+def is_rfc1918(ip_str):
+    try:
+        ip = ipaddress.ip_address(ip_str)
+        return any(ip in net for net in RFC1918_NETWORKS)
+    except ValueError:
+        return False
+
 def extract_unique_hosts_from_file(file_path):
     unique_hosts = set()
 
@@ -37,6 +51,8 @@ def main():
     parser.add_argument("-d", "--directory", help="Directory of files to process.")
     parser.add_argument("-D", "--duplicates", action="store_true",
                         help="When processing a directory, list hosts that appear in more than one file and which files they appear in.")
+    parser.add_argument("-r", "--rfc1918", action="store_true",
+                        help="Optionally show how many hosts are in RFC1918 space vs not (per-file and totals).")
     args = parser.parse_args()
 
     if args.directory:
@@ -51,6 +67,18 @@ def main():
                 print(f"{entry}: {len(file_hosts)} unique hosts")
                 grand_total_hosts.update(file_hosts)
         print(f"\nTotal unique hosts across all files: {len(grand_total_hosts)}")
+
+        if args.rfc1918:
+            print("\nRFC1918 breakdown per file:")
+            for fname in sorted(file_hosts_map.keys()):
+                hosts = file_hosts_map[fname]
+                rfc_count = sum(1 for h in hosts if is_rfc1918(h))
+                non_rfc = len(hosts) - rfc_count
+                print(f"{fname}: {rfc_count} RFC1918, {non_rfc} non-RFC1918")
+
+            total_rfc = sum(1 for h in grand_total_hosts if is_rfc1918(h))
+            total_non_rfc = len(grand_total_hosts) - total_rfc
+            print(f"\nTotals across all files: {total_rfc} RFC1918, {total_non_rfc} non-RFC1918")
 
         if args.duplicates:
             # Build host -> set(files) mapping
@@ -73,6 +101,11 @@ def main():
     elif args.file:
         unique_hosts = extract_unique_hosts_from_file(args.file)
         print(f"\nTotal unique hosts in {args.file} (excluding network and broadcast): {len(unique_hosts)}")
+
+        if args.rfc1918:
+            rfc_count = sum(1 for h in unique_hosts if is_rfc1918(h))
+            non_rfc = len(unique_hosts) - rfc_count
+            print(f"{args.file}: {rfc_count} RFC1918, {non_rfc} non-RFC1918")
 
     else:
         print("ERROR: Either a file or a directory must be specified.")
