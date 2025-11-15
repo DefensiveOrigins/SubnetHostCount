@@ -28,6 +28,10 @@ Python 3.6+
 ```bash
 python HostCount.py -d path/to/cidrs.txt
 ```
+or
+```bash
+subnethostcount -d path/to/cidrs.txt
+```
 
 ### 
 Optional flags:
