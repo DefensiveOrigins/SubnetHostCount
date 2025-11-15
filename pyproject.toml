@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "subnethostcount"
-version = "0.1.4"
+version = "0.1.5"
 description = "Count usable IPv4 hosts across CIDR subnets and individual IP addresses."
 readme = "README.md"
 requires-python = ">=3.8"
