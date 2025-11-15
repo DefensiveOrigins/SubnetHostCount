@@ -6,6 +6,7 @@ Simple python to count hosts in a list of subnets and ip addresses
 
 This script reads a file containing IPv4 CIDR notations or individual IP addresses and calculates the total number of valid hosts. It excludes network and broadcast addresses for subnets, but counts single IPs (e.g., `10.0.0.5`) as one valid host.
 
+
 ## Features
 
 - Accepts a file containing:
@@ -15,7 +16,7 @@ This script reads a file containing IPv4 CIDR notations or individual IP address
 - Ignores empty lines and lines starting with `#`
 - Warns about invalid lines with a descriptive message
 - Identifies duplicates (-D to list hosts appearing in multiple files)
-- Calculates RFC1918 private vs public host counts (-r)
+- Calculates RFC1918 private vs public host counts (-r) 
 
 ## Usage
 
